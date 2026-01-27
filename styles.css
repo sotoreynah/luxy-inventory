@@ -478,7 +478,8 @@ h3 {
     background: #fafafa;
     display: block;
     width: 100%;
-    height: 200px;
+    height: auto;
+    max-width: 600px;
     touch-action: none;
     cursor: crosshair;
     transition: border-color 0.2s ease;

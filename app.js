@@ -1,8 +1,61 @@
-// Luxy Inventory Checkout App just checking update
+// Luxy Inventory Checkout App
 // Configuration
 const CONFIG = {
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbw3SzlCfE96td-cfj5pO1j1BnrPalZdhxFn-fIfRALTJgDPRxateXFVwv7_njSLelAPKQ/exec'
+    BACKEND_URL: 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'
 };
+
+// Response validation helpers
+function validateEmployeeList(data) {
+    if (!Array.isArray(data)) {
+        throw new Error('Expected employees to be an array');
+    }
+
+    // Check size limit (max 1000 employees)
+    if (data.length > 1000) {
+        throw new Error(`Too many employees: ${data.length}`);
+    }
+
+    // Validate each employee object
+    return data.map(emp => {
+        if (!emp.id || typeof emp.id !== 'string') {
+            throw new Error('Each employee must have an id (string)');
+        }
+        if (!emp.name || typeof emp.name !== 'string') {
+            throw new Error('Each employee must have a name (string)');
+        }
+        return {
+            id: emp.id.substring(0, 50),  // Max 50 chars
+            name: emp.name.substring(0, 100)  // Max 100 chars
+        };
+    });
+}
+
+function validateItemList(data) {
+    if (!Array.isArray(data)) {
+        throw new Error('Expected items to be an array');
+    }
+
+    if (data.length > 1000) {
+        throw new Error(`Too many items: ${data.length}`);
+    }
+
+    return data.map(item => {
+        if (!item.id || typeof item.id !== 'string') {
+            throw new Error('Each item must have an id (string)');
+        }
+        if (!item.name || typeof item.name !== 'string') {
+            throw new Error('Each item must have a name (string)');
+        }
+        if (!item.unit || typeof item.unit !== 'string') {
+            throw new Error('Each item must have a unit (string)');
+        }
+        return {
+            id: item.id.substring(0, 50),
+            name: item.name.substring(0, 100),
+            unit: item.unit.substring(0, 20)
+        };
+    });
+}
 
 // App State
 const app = {
@@ -87,16 +140,38 @@ async function loadData() {
 // Fetch employees from Google Sheets
 async function fetchEmployees() {
     const response = await fetch(`${CONFIG.BACKEND_URL}?action=getEmployees`);
-    const data = await response.json();
-    app.employees = data.employees || [];
+
+    if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+    }
+
+    const rawData = await response.json();
+
+    try {
+        app.employees = validateEmployeeList(rawData.employees || []);
+    } catch (error) {
+        console.error('Invalid employee data from server:', error);
+        throw new Error(`Invalid employee data: ${error.message}`);
+    }
 }
 
 
 // Fetch items from Google Sheets
 async function fetchItems() {
     const response = await fetch(`${CONFIG.BACKEND_URL}?action=getItems`);
-    const data = await response.json();
-    app.items = data.items || [];
+
+    if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+    }
+
+    const rawData = await response.json();
+
+    try {
+        app.items = validateItemList(rawData.items || []);
+    } catch (error) {
+        console.error('Invalid items data from server:', error);
+        throw new Error(`Invalid items data: ${error.message}`);
+    }
 }
 
 // Cache management
@@ -301,6 +376,19 @@ function hasSignature() {
     return imageData.data.some(channel => channel !== 0);
 }
 
+// Compress signature for storage efficiency
+function compressSignature(canvas) {
+    // Create smaller temporary canvas
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 200;
+    tempCanvas.height = 67;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    // Return as JPEG for better compression (60% quality)
+    return tempCanvas.toDataURL('image/jpeg', 0.6);
+}
+
 // Submit checkout
 app.submitCheckout = async () => {
     if (!hasSignature()) {
@@ -309,7 +397,7 @@ app.submitCheckout = async () => {
     }
     
     const canvas = document.getElementById('signature-pad');
-    const signatureData = canvas.toDataURL('image/png');
+    const signatureData = compressSignature(canvas);
     
     const checkoutData = {
         timestamp: new Date().toISOString(),
@@ -351,22 +439,30 @@ app.submitCheckout = async () => {
 
 // Submit to Google Sheets
 async function submitToSheet(checkoutData) {
-    // Use no-cors mode to bypass CORS issues
-    const response = await fetch(CONFIG.BACKEND_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            action: 'submitCheckout',
-            timestamp: checkoutData.timestamp,
-            employee: checkoutData.employee,
-            items: checkoutData.items
-        })
-    });
-    
-    // With no-cors, we can't read the response, so assume success
-    // Check the sheet to verify
-    console.log('Submitted (no-cors mode - check sheet to verify)');
+    try {
+        const response = await fetch(CONFIG.BACKEND_URL, {
+            method: 'POST',
+            mode: 'cors',  // Changed from 'no-cors' to enable response verification
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'submitCheckout',
+                timestamp: checkoutData.timestamp,
+                employee: checkoutData.employee,
+                items: checkoutData.items
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Submission successful:', result);
+        return result;
+    } catch (error) {
+        console.error('Submission failed:', error);
+        throw error;  // Re-throw so sync handler catches it
+    }
 }
 
 // Offline queue
@@ -378,23 +474,33 @@ function savePendingCheckout(data) {
 
 async function syncPendingCheckouts() {
     const pending = JSON.parse(localStorage.getItem('pending_checkouts') || '[]');
-    
+
     if (pending.length === 0) return;
-    
+
     console.log(`Syncing ${pending.length} pending checkouts...`);
-    
+    const failed = [];
+
     for (const checkout of pending) {
         try {
             await submitToSheet(checkout);
+            console.log('Synced checkout:', checkout.timestamp);
         } catch (error) {
             console.error('Sync failed for checkout:', error);
-            return; // Stop syncing if one fails
+            failed.push(checkout);
         }
     }
+
+    // Only clear successfully synced items
+    if (failed.length === 0) {
+        localStorage.setItem('pending_checkouts', '[]');
+        console.log('All pending checkouts synced!');
+    } else {
+        // Keep failed items for retry
+        localStorage.setItem('pending_checkouts', JSON.stringify(failed));
+        console.warn(`${failed.length} checkouts failed to sync, will retry`);
+    }
     
-    // Clear pending
-    localStorage.setItem('pending_checkouts', '[]');
-    console.log('All pending checkouts synced!');
+    updateSyncStatus();
 }
 
 // Show confirmation
