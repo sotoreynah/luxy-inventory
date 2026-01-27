@@ -351,20 +351,23 @@ app.submitCheckout = async () => {
 
 // Submit to Google Sheets
 async function submitToSheet(checkoutData) {
-    const response = await fetch(CONFIG.BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            action: 'submitCheckout',
-            timestamp: checkoutData.timestamp,
-            employee: checkoutData.employee,
-            items: checkoutData.items
-        })
+    // Use GET instead of POST to avoid CORS preflight
+    const payload = {
+        action: 'submitCheckout',
+        timestamp: checkoutData.timestamp,
+        employee: checkoutData.employee,
+        items: checkoutData.items
+    };
+    
+    const url = `${CONFIG.BACKEND_URL}?action=submitCheckout&data=${encodeURIComponent(JSON.stringify(payload))}`;
+    
+    const response = await fetch(url, {
+        method: 'GET'
     });
     
     const result = await response.json();
     if (!result.success) {
-        throw new Error('Failed to submit checkout');
+        throw new Error(result.error || 'Failed to submit checkout');
     }
 }
 
