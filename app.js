@@ -1,8 +1,11 @@
 // Luxy Inventory Checkout App
+// Luxy Inventory Checkout App
 // Configuration
 const CONFIG = {
-    BACKEND_URL: 'BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz2nJYAaOtlYvxN7N_Y0FXn6W8sKGYCCnivrHx544-9IYIVaeUrNthpyMVI0axJtzt4rg/exec'
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz2nJYAaOtlYvxN7N_Y0FXn6W8sKGYCCnivrHx544-9IYIVaeUrNthpyMVI0axJtzt4rg/exec'
 };
+
+
 
 // Response validation helpers
 function validateEmployeeList(data) {
