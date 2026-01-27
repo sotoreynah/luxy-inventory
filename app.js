@@ -321,18 +321,28 @@ app.submitCheckout = async () => {
     showLoading(true);
     
     try {
-       if (app.isOnline) {
+        if (app.isOnline) {
+            console.log('Submitting online...', checkoutData);
             await submitToSheet(checkoutData);
+            console.log('Submit successful!');
+            
+            // Clear cart immediately after successful submit
+            app.cart = [];
+            app.clearSignature();
+            
             showConfirmation();
         } else {
-            // Save offline
+            console.log('Offline - saving to queue');
             savePendingCheckout(checkoutData);
             showConfirmation(true);
         }
     } catch (error) {
         console.error('Submit error:', error);
+        
+        // Show the actual error to debug
+        alert(`Submission failed: ${error.message}\nSaving offline for later sync.`);
+        
         savePendingCheckout(checkoutData);
-        alert('Saved offline. Will sync when online.');
         showConfirmation(true);
     } finally {
         showLoading(false);
@@ -397,9 +407,15 @@ function showConfirmation(offline = false) {
 
 // Start new checkout
 app.startNew = () => {
+    // Clear everything
     app.currentEmployee = null;
     app.cart = [];
     app.clearSignature();
+    
+    // Re-render to make sure UI is clean
+    renderCart();
+    
+    // Go back to employee selection
     app.goToScreen('employee');
 };
 
