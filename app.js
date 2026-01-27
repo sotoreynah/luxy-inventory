@@ -351,9 +351,8 @@ app.submitCheckout = async () => {
 
 // Submit to Google Sheets
 async function submitToSheet(checkoutData) {
-    // Use GET instead of POST to avoid CORS preflight
+    // Simplify payload - don't nest action inside
     const payload = {
-        action: 'submitCheckout',
         timestamp: checkoutData.timestamp,
         employee: checkoutData.employee,
         items: checkoutData.items
