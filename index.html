@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Luxy Inventory Checkout</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧹</text></svg>">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <h1>🧹 Luxy Inventory</h1>
+            <div id="sync-status" class="sync-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Checking...</span>
+            </div>
+        </header>
+
+        <!-- Screen 1: Select Employee -->
+        <div id="screen-employee" class="screen active">
+            <h2>Who are you?</h2>
+            <div id="employee-buttons" class="button-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Screen 2: Add Items -->
+        <div id="screen-items" class="screen">
+            <div class="screen-header">
+                <h2>Checking out for: <span id="current-employee-name"></span></h2>
+                <button class="btn-back" onclick="app.goToScreen('employee')">← Back</button>
+            </div>
+
+            <div class="add-item-section">
+                <label for="item-select">Select Item:</label>
+                <select id="item-select" class="large-select">
+                    <option value="">-- Choose Item --</option>
+                </select>
+
+                <label for="quantity-input">Quantity:</label>
+                <div class="quantity-controls">
+                    <button class="btn-qty" onclick="app.decrementQty()">−</button>
+                    <input type="number" id="quantity-input" value="1" min="1" max="999">
+                    <button class="btn-qty" onclick="app.incrementQty()">+</button>
+                </div>
+
+                <button class="btn-primary btn-large" onclick="app.addToCart()">Add to Cart</button>
+            </div>
+
+            <div class="cart-section">
+                <h3>Your Cart (<span id="cart-count">0</span> items)</h3>
+                <div id="cart-items" class="cart-list">
+                    <p class="empty-cart">Cart is empty</p>
+                </div>
+                <button id="btn-continue" class="btn-primary btn-large" onclick="app.goToSignature()" disabled>
+                    Continue to Signature →
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen 3: Signature -->
+        <div id="screen-signature" class="screen">
+            <div class="screen-header">
+                <h2>Review & Sign</h2>
+                <button class="btn-back" onclick="app.goToScreen('items')">← Back</button>
+            </div>
+
+            <div class="summary-section">
+                <h3>Items being checked out:</h3>
+                <ul id="summary-items" class="summary-list"></ul>
+            </div>
+
+            <div class="signature-section">
+                <label>Your Signature:</label>
+                <canvas id="signature-pad" width="600" height="200"></canvas>
+                <div class="signature-controls">
+                    <button class="btn-secondary" onclick="app.clearSignature()">Clear</button>
+                </div>
+            </div>
+
+            <button id="btn-submit" class="btn-primary btn-large btn-submit" onclick="app.submitCheckout()">
+                Submit Checkout
+            </button>
+        </div>
+
+        <!-- Screen 4: Confirmation -->
+        <div id="screen-confirmation" class="screen">
+            <div class="confirmation-content">
+                <div class="success-icon">✅</div>
+                <h2>Checkout Complete!</h2>
+                <p id="confirmation-message">Items logged successfully</p>
+                <p class="employee-info">Employee: <strong id="confirmation-employee"></strong></p>
+                <button class="btn-primary btn-large" onclick="app.startNew()">Start New Checkout</button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
