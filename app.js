@@ -67,7 +67,7 @@ async function loadData() {
         }
         
         // Then fetch fresh data
-        if (app.isOnline && app.accessToken) {
+        if (app.isOnline) {
             await fetchEmployees();
             await fetchItems();
             saveToCache();
@@ -321,7 +321,7 @@ app.submitCheckout = async () => {
     showLoading(true);
     
     try {
-        if (app.isOnline && app.accessToken) {
+       if (app.isOnline) {
             await submitToSheet(checkoutData);
             showConfirmation();
         } else {
