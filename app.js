@@ -1,8 +1,7 @@
 // Luxy Inventory Checkout App
 // Configuration
 const CONFIG = {
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz2nJYAaOtlYvxN7N_Y0FXn6W8sKGYCCnivrHx544-9IYIVaeUrNthpyMVI0axJtzt4rg/exec''
-    
+    BACKEND_URL: 'BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz2nJYAaOtlYvxN7N_Y0FXn6W8sKGYCCnivrHx544-9IYIVaeUrNthpyMVI0axJtzt4rg/exec'
 };
 
 // Response validation helpers
@@ -440,30 +439,21 @@ app.submitCheckout = async () => {
 
 // Submit to Google Sheets
 async function submitToSheet(checkoutData) {
-    try {
-        const response = await fetch(CONFIG.BACKEND_URL, {
-            method: 'POST',
-            mode: 'cors',  // Changed from 'no-cors' to enable response verification
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'submitCheckout',
-                timestamp: checkoutData.timestamp,
-                employee: checkoutData.employee,
-                items: checkoutData.items
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log('Submission successful:', result);
-        return result;
-    } catch (error) {
-        console.error('Submission failed:', error);
-        throw error;  // Re-throw so sync handler catches it
-    }
+    // Use no-cors mode for Google Apps Script compatibility
+    const response = await fetch(CONFIG.BACKEND_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'submitCheckout',
+            timestamp: checkoutData.timestamp,
+            employee: checkoutData.employee,
+            items: checkoutData.items
+        })
+    });
+    
+    // With no-cors, we can't read the response, so assume success
+    console.log('Submitted (no-cors mode - check sheet to verify)');
 }
 
 // Offline queue
