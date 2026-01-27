@@ -1,7 +1,7 @@
 // Luxy Inventory Checkout App just checking update
 // Configuration
 const CONFIG = {
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxC77mRunmMFq6WzIKvRwV07PaGkRXbob0jr6XKOer2AxF2cx74h0lr3BueNuZC5UzGWQ/exec'
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbw3SzlCfE96td-cfj5pO1j1BnrPalZdhxFn-fIfRALTJgDPRxateXFVwv7_njSLelAPKQ/exec'
 };
 
 // App State
