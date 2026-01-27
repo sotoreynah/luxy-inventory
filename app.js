@@ -1,7 +1,8 @@
 // Luxy Inventory Checkout App
 // Configuration
 const CONFIG = {
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxks6taa7GS9sHrXL4dI7oE1AV6dFce6ZucXtaYlmo11IC5f-CC0yalLI0CGsvl8Ber/exec'
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz2nJYAaOtlYvxN7N_Y0FXn6W8sKGYCCnivrHx544-9IYIVaeUrNthpyMVI0axJtzt4rg/exec'
+    
 };
 
 // Response validation helpers
