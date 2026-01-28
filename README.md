@@ -70,4 +70,4 @@ python3 -m http.server 8000
 **License**: Private use only
 =======
 Offline-capable web app for tracking cleaning supply checkouts.
->>>>>>> ca98527742f5a5e970f05bff3f0a09aeb54d5bd8
+
