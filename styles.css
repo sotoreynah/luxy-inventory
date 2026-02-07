@@ -197,6 +197,7 @@ h3 {
 
 .btn-employee {
     background: var(--card-bg);
+    color: var(--text-color);
     border: 2px solid var(--border-color);
     padding: 2rem 1.5rem;
     border-radius: 12px;
