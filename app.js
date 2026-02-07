@@ -211,6 +211,11 @@ function loadFromCache() {
     };
 }
 
+// Get initials from a name (e.g. "Maria Lopez" → "ML")
+function getInitials(name) {
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+}
+
 // Render employees (with optional search filter)
 function renderEmployees(filter = '') {
     const container = document.getElementById('employee-buttons');
@@ -224,7 +229,16 @@ function renderEmployees(filter = '') {
     filtered.forEach(emp => {
         const btn = document.createElement('button');
         btn.className = 'btn-employee';
-        btn.textContent = emp.name;
+
+        const avatar = document.createElement('span');
+        avatar.className = 'emp-avatar';
+        avatar.textContent = getInitials(emp.name);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = emp.name;
+
+        btn.appendChild(avatar);
+        btn.appendChild(nameSpan);
         btn.onclick = () => selectEmployee(emp);
         container.appendChild(btn);
     });
@@ -234,10 +248,22 @@ function renderEmployees(filter = '') {
     }
 }
 
-// Wire up employee search
+// Wire up employee search + clear button
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('employee-search');
-    searchInput.addEventListener('input', () => renderEmployees(searchInput.value));
+    const clearBtn = document.getElementById('search-clear');
+
+    searchInput.addEventListener('input', () => {
+        renderEmployees(searchInput.value);
+        clearBtn.classList.toggle('visible', searchInput.value.length > 0);
+    });
+
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        clearBtn.classList.remove('visible');
+        renderEmployees();
+        searchInput.focus();
+    });
 });
 
 // Render items dropdown
@@ -585,11 +611,29 @@ app.goBackFromItems = () => {
     app.goToScreen('employee');
 };
 
+// Screen-to-step mapping
+const SCREEN_STEP = { employee: 1, items: 2, signature: 3, confirmation: 4 };
+
+// Update step progress bar
+function updateStepBar(stepNum) {
+    document.querySelectorAll('.step-bar .step').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'done');
+        if (s === stepNum) el.classList.add('active');
+        else if (s < stepNum) el.classList.add('done');
+    });
+    document.querySelectorAll('.step-bar .step-connector').forEach(el => {
+        const c = parseInt(el.dataset.connector);
+        el.classList.toggle('done', c < stepNum);
+    });
+}
+
 // Screen navigation
 app.goToScreen = (screenName) => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${screenName}`).classList.add('active');
     app.currentScreen = screenName;
+    updateStepBar(SCREEN_STEP[screenName] || 1);
 };
 
 // Loading overlay

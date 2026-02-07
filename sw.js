@@ -1,5 +1,5 @@
 // Luxy Inventory Service Worker
-const CACHE_NAME = 'luxy-inventory-v2';
+const CACHE_NAME = 'luxy-inventory-v3';
 const urlsToCache = [
     './',
     './index.html',

@@ -5,27 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Luxy Inventory Checkout</title>
+    <title>LuxyClean Inventory</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧹</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2235%22 cy=%2250%22 r=%2230%22 fill=%22%236BA4D9%22/><circle cx=%2270%22 cy=%2230%22 r=%2215%22 fill=%22%231B2A4A%22/><circle cx=%2280%22 cy=%2260%22 r=%228%22 fill=%22%236BA4D9%22 opacity=%220.6%22/></svg>">
 </head>
 <body>
     <div id="app">
         <!-- Header -->
         <header>
-            <h1>🧹 Luxy Inventory</h1>
+            <div class="header-brand">
+                <svg class="header-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="38" cy="55" r="32" fill="#6BA4D9"/>
+                    <circle cx="72" cy="28" r="16" fill="#1B2A4A" opacity="0.8"/>
+                    <circle cx="82" cy="62" r="8" fill="#6BA4D9" opacity="0.5"/>
+                    <circle cx="18" cy="22" r="6" fill="#6BA4D9" opacity="0.4"/>
+                    <ellipse cx="28" cy="48" rx="8" ry="12" fill="rgba(255,255,255,0.25)" transform="rotate(-30 28 48)"/>
+                    <circle cx="60" cy="22" rx="3" fill="rgba(255,255,255,0.35)"/>
+                </svg>
+                <h1>Luxy<span>Clean</span></h1>
+            </div>
             <div id="sync-status" class="sync-status">
                 <span class="status-dot" id="status-dot"></span>
                 <span id="status-text">Checking...</span>
             </div>
         </header>
 
+        <!-- Step Progress Bar -->
+        <div class="step-bar" id="step-bar">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-label">Employee</span>
+            </div>
+            <div class="step-connector" data-connector="1"></div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-label">Items</span>
+            </div>
+            <div class="step-connector" data-connector="2"></div>
+            <div class="step" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-label">Sign</span>
+            </div>
+            <div class="step-connector" data-connector="3"></div>
+            <div class="step" data-step="4">
+                <span class="step-number">4</span>
+                <span class="step-label">Done</span>
+            </div>
+        </div>
+
         <!-- Screen 1: Select Employee -->
         <div id="screen-employee" class="screen active">
             <h2>Who are you?</h2>
             <div class="search-wrapper">
                 <input type="text" id="employee-search" class="search-input" placeholder="Search employee..." autocomplete="off">
+                <button class="search-clear" id="search-clear" type="button">&times;</button>
             </div>
             <div id="employee-buttons" class="button-grid">
                 <!-- Dynamically populated -->
@@ -40,23 +74,29 @@
             </div>
 
             <div class="add-item-section">
-                <label for="item-select">Select Item:</label>
-                <select id="item-select" class="large-select">
-                    <option value="">-- Choose Item --</option>
-                </select>
+                <div class="add-item-row">
+                    <div class="field-group">
+                        <label for="item-select">Select Item</label>
+                        <select id="item-select" class="large-select">
+                            <option value="">-- Choose Item --</option>
+                        </select>
+                    </div>
 
-                <label for="quantity-input">Quantity:</label>
-                <div class="quantity-controls">
-                    <button class="btn-qty" onclick="app.decrementQty()">−</button>
-                    <input type="number" id="quantity-input" value="1" min="1" max="999">
-                    <button class="btn-qty" onclick="app.incrementQty()">+</button>
+                    <div class="field-group-qty">
+                        <label for="quantity-input">Qty</label>
+                        <div class="quantity-controls">
+                            <button class="btn-qty" onclick="app.decrementQty()">−</button>
+                            <input type="number" id="quantity-input" value="1" min="1" max="999">
+                            <button class="btn-qty" onclick="app.incrementQty()">+</button>
+                        </div>
+                    </div>
                 </div>
 
                 <button class="btn-primary btn-large" onclick="app.addToCart()">Add to Cart</button>
             </div>
 
             <div class="cart-section">
-                <h3>Your Cart (<span id="cart-count">0</span> items)</h3>
+                <h3>Cart <span class="cart-badge" id="cart-count">0</span></h3>
                 <div id="cart-items" class="cart-list">
                     <p class="empty-cart">Cart is empty</p>
                 </div>
@@ -79,7 +119,7 @@
             </div>
 
             <div class="signature-section">
-                <label>Your Signature:</label>
+                <label>Your Signature</label>
                 <canvas id="signature-pad"></canvas>
                 <div class="signature-controls">
                     <button class="btn-secondary" onclick="app.clearSignature()">Clear</button>
@@ -94,7 +134,10 @@
         <!-- Screen 4: Confirmation -->
         <div id="screen-confirmation" class="screen">
             <div class="confirmation-content">
-                <div class="success-icon">✅</div>
+                <svg class="success-checkmark" viewBox="0 0 52 52">
+                    <circle class="check-circle" cx="26" cy="26" r="24"/>
+                    <path class="check-mark" d="M14 27l7 7 16-16"/>
+                </svg>
                 <h2>Checkout Complete!</h2>
                 <p id="confirmation-message">Items logged successfully</p>
                 <p class="employee-info">Employee: <strong id="confirmation-employee"></strong></p>
