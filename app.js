@@ -57,6 +57,13 @@ function validateItemList(data) {
     });
 }
 
+// HTML escape helper to prevent XSS
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // App State
 const app = {
     currentScreen: 'employee',
@@ -285,8 +292,8 @@ function renderCart() {
     container.innerHTML = app.cart.map((item, index) => `
         <div class="cart-item">
             <div class="cart-item-info">
-                <strong>${item.name}</strong><br>
-                <span>${item.quantity} ${item.unit}${item.quantity > 1 ? 's' : ''}</span>
+                <strong>${escapeHTML(item.name)}</strong><br>
+                <span>${item.quantity} ${escapeHTML(item.unit)}${item.quantity > 1 ? 's' : ''}</span>
             </div>
             <button class="btn-remove" onclick="removeFromCart(${index})">×</button>
         </div>
@@ -304,7 +311,7 @@ app.goToSignature = () => {
     // Render summary
     const summaryList = document.getElementById('summary-items');
     summaryList.innerHTML = app.cart.map(item => 
-        `<li>${item.quantity} ${item.unit}${item.quantity > 1 ? 's' : ''} ${item.name}</li>`
+        `<li>${item.quantity} ${escapeHTML(item.unit)}${item.quantity > 1 ? 's' : ''} ${escapeHTML(item.name)}</li>`
     ).join('');
     
     app.goToScreen('signature');
