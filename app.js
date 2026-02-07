@@ -57,6 +57,19 @@ function validateItemList(data) {
     });
 }
 
+// Toast notification helper
+function showToast(message, type = 'error', duration = 4000) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-out');
+        toast.addEventListener('animationend', () => toast.remove());
+    }, duration);
+}
+
 // HTML escape helper to prevent XSS
 function escapeHTML(str) {
     const div = document.createElement('div');
@@ -134,7 +147,7 @@ async function loadData() {
         }
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Error loading data. Using cached version if available.');
+        showToast('Error loading data. Using cached version if available.', 'warning');
     } finally {
         showLoading(false);
     }
@@ -198,19 +211,34 @@ function loadFromCache() {
     };
 }
 
-// Render employees
-function renderEmployees() {
+// Render employees (with optional search filter)
+function renderEmployees(filter = '') {
     const container = document.getElementById('employee-buttons');
     container.innerHTML = '';
-    
-    app.employees.forEach(emp => {
+
+    const query = filter.toLowerCase().trim();
+    const filtered = query
+        ? app.employees.filter(emp => emp.name.toLowerCase().includes(query))
+        : app.employees;
+
+    filtered.forEach(emp => {
         const btn = document.createElement('button');
         btn.className = 'btn-employee';
         btn.textContent = emp.name;
         btn.onclick = () => selectEmployee(emp);
         container.appendChild(btn);
     });
+
+    if (filtered.length === 0 && query) {
+        container.innerHTML = '<p class="empty-cart">No employees found</p>';
+    }
 }
+
+// Wire up employee search
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('employee-search');
+    searchInput.addEventListener('input', () => renderEmployees(searchInput.value));
+});
 
 // Render items dropdown
 function renderItems() {
@@ -252,7 +280,7 @@ app.addToCart = () => {
     const qtyInput = document.getElementById('quantity-input');
     
     if (!select.value) {
-        alert('Please select an item');
+        showToast('Please select an item', 'warning');
         return;
     }
     
@@ -319,49 +347,65 @@ app.goToSignature = () => {
 function setupSignaturePad() {
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
-    
-    let isDrawing = false;
-    let lastX = 0;
-    let lastY = 0;
-    
-    function startDrawing(e) {
-        isDrawing = true;
+
+    // Size canvas to match its CSS container
+    function resizeCanvas() {
         const rect = canvas.getBoundingClientRect();
-        const touch = e.touches ? e.touches[0] : e;
-        lastX = touch.clientX - rect.left;
-        lastY = touch.clientY - rect.top;
-    }
-    
-    function draw(e) {
-        if (!isDrawing) return;
-        e.preventDefault();
-        
-        const rect = canvas.getBoundingClientRect();
-        const touch = e.touches ? e.touches[0] : e;
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(x, y);
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
-        ctx.stroke();
-        
-        lastX = x;
-        lastY = y;
     }
-    
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : e;
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+
+        lastX = pos.x;
+        lastY = pos.y;
+    }
+
     function stopDrawing() {
         isDrawing = false;
     }
-    
+
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseout', stopDrawing);
-    
+
     canvas.addEventListener('touchstart', startDrawing);
     canvas.addEventListener('touchmove', draw);
     canvas.addEventListener('touchend', stopDrawing);
@@ -397,7 +441,7 @@ function compressSignature(canvas) {
 // Submit checkout
 app.submitCheckout = async () => {
     if (!hasSignature()) {
-        alert('Please provide your signature');
+        showToast('Please provide your signature', 'warning');
         return;
     }
     
@@ -433,8 +477,7 @@ app.submitCheckout = async () => {
     } catch (error) {
         console.error('Submit error:', error);
         
-        // Show the actual error to debug
-        alert(`Submission failed: ${error.message}\nSaving offline for later sync.`);
+        showToast(`Submission failed: ${error.message}. Saved offline for later sync.`, 'error');
         
         savePendingCheckout(checkoutData);
         showConfirmation(true);
@@ -527,6 +570,18 @@ app.startNew = () => {
     renderCart();
     
     // Go back to employee selection
+    app.goToScreen('employee');
+};
+
+// Guard: confirm before leaving items screen with items in cart
+app.goBackFromItems = () => {
+    if (app.cart.length > 0) {
+        if (!confirm('You have items in your cart. Go back and discard them?')) {
+            return;
+        }
+        app.cart = [];
+        renderCart();
+    }
     app.goToScreen('employee');
 };
 

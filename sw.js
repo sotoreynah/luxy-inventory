@@ -1,5 +1,5 @@
 // Luxy Inventory Service Worker
-const CACHE_NAME = 'luxy-inventory-v1';
+const CACHE_NAME = 'luxy-inventory-v2';
 const urlsToCache = [
     './',
     './index.html',
@@ -72,7 +72,32 @@ self.addEventListener('fetch', event => {
                     // For HTML pages, return empty offline message
                     if (event.request.headers.get('accept').includes('text/html')) {
                         return new Response(
-                            '<h1>Offline</h1><p>Cannot load page without internet.</p>',
+                            `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luxy Inventory - Offline</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+  .offline-card { text-align: center; background: white; padding: 3rem 2rem; border-radius: 16px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
+  .offline-icon { font-size: 4rem; margin-bottom: 1rem; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #0f172a; }
+  p { color: #64748b; line-height: 1.6; margin-bottom: 1.5rem; }
+  button { background: #3b82f6; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+  button:active { background: #2563eb; }
+</style>
+</head>
+<body>
+<div class="offline-card">
+  <div class="offline-icon">📡</div>
+  <h1>You're Offline</h1>
+  <p>Connect to the internet to load Luxy Inventory. Once loaded, the app works offline for checkouts.</p>
+  <button onclick="location.reload()">Try Again</button>
+</div>
+</body>
+</html>`,
                             { headers: { 'Content-Type': 'text/html' } }
                         );
                     }
