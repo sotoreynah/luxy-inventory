@@ -71,10 +71,8 @@ const app = {
     cart: [],
     employees: [],
     items: [],
-    accessToken: null,
     signaturePad: null,
-    isOnline: navigator.onLine,
-    pendingCheckouts: []
+    isOnline: navigator.onLine
 };
 
 // Initialize app
@@ -421,11 +419,12 @@ app.submitCheckout = async () => {
             await submitToSheet(checkoutData);
             console.log('Submit successful!');
             
-            // Clear cart immediately after successful submit
+            // Save count before clearing cart
+            const itemCount = app.cart.length;
             app.cart = [];
             app.clearSignature();
-            
-            showConfirmation();
+
+            showConfirmation(false, itemCount);
         } else {
             console.log('Offline - saving to queue');
             savePendingCheckout(checkoutData);
@@ -446,11 +445,8 @@ app.submitCheckout = async () => {
 
 // Submit to Google Sheets
 async function submitToSheet(checkoutData) {
-    // Use no-cors mode for Google Apps Script compatibility
     const response = await fetch(CONFIG.BACKEND_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             action: 'submitCheckout',
             timestamp: checkoutData.timestamp,
@@ -458,9 +454,19 @@ async function submitToSheet(checkoutData) {
             items: checkoutData.items
         })
     });
-    
-    // With no-cors, we can't read the response, so assume success
-    console.log('Submitted (no-cors mode - check sheet to verify)');
+
+    if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+        throw new Error(result.error || 'Checkout submission failed');
+    }
+
+    console.log('Checkout submitted successfully:', result.timestamp);
+    return result;
 }
 
 // Offline queue
@@ -502,10 +508,10 @@ async function syncPendingCheckouts() {
 }
 
 // Show confirmation
-function showConfirmation(offline = false) {
+function showConfirmation(offline = false, itemCount = app.cart.length) {
     document.getElementById('confirmation-employee').textContent = app.currentEmployee.name;
-    document.getElementById('confirmation-message').textContent = 
-        `${app.cart.length} item${app.cart.length > 1 ? 's' : ''} logged ${offline ? '(offline - will sync)' : 'successfully'}`;
+    document.getElementById('confirmation-message').textContent =
+        `${itemCount} item${itemCount > 1 ? 's' : ''} logged ${offline ? '(offline - will sync)' : 'successfully'}`;
     
     app.goToScreen('confirmation');
 }
